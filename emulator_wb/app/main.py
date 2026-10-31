@@ -104,7 +104,7 @@ def create_app(store: Store | None = None) -> FastAPI:
                 "activationDate": task.applied_at.isoformat() if task.applied_at else "",
                 "overAllLimit": 0,
                 "processed": task.applied_at.isoformat() if task.applied_at else "",
-                "goods": [_task_item_json(store, task, item) for item in task.items],
+                "goods": [_task_item_json(store, task, item, with_code=True) for item in task.items],
             },
             "error": False,
             "errorText": "",
