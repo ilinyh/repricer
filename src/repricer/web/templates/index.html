@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Товары</h1>
+{% if error %}<p class="message">{{ error }}</p>{% endif %}
 <form method="get" action="/" class="inline">
     <label>Зона
         <select name="zone">

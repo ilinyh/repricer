@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 
 from emulator_wb.app.store import load_goods
 from repricer.adapters.accounting import CsvAccountingSource
-from repricer.adapters.marketplace import WBClient
+from repricer.adapters.marketplace import WBClient, WBClientError
 from repricer.app import RepricerService
 from repricer.storage import Repository
 from repricer.web import create_app
@@ -130,3 +130,17 @@ def test_filters_by_zone(tmp_path, start_emulator):
     assert response.status_code == 200
     assert "T-OUT" in response.text
     assert "T-OVER" not in response.text
+
+
+def test_marketplace_error_is_shown_not_500(tmp_path, start_emulator):
+    client, service, _repo = build(tmp_path, start_emulator)
+
+    def boom():
+        raise WBClientError("эмулятор недоступен")
+
+    service.marketplace.list_goods = boom
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Ошибка чтения данных" in response.text
+    assert "эмулятор недоступен" in response.text

@@ -125,7 +125,12 @@ def create_app(
 
     @app.get("/")
     def index(request: Request):
-        rows = service.table(as_of=_as_of(request))
+        error = ""
+        try:
+            rows = service.table(as_of=_as_of(request))
+        except Exception as exc:  # noqa: BLE001 - показываем человеку, а не 500
+            rows = []
+            error = f"Ошибка чтения данных: {exc}"
         zone = request.query_params.get("zone") or ""
         mode = request.query_params.get("mode") or ""
         if zone:
@@ -135,7 +140,7 @@ def create_app(
         return templates.TemplateResponse(
             request,
             "index.html",
-            _context(request, rows=rows, zone=zone, mode=mode),
+            _context(request, rows=rows, zone=zone, mode=mode, error=error),
         )
 
     @app.post("/run")
@@ -190,7 +195,10 @@ def create_app(
 
     @app.get("/product/{vendor_code}")
     def product(request: Request, vendor_code: str):
-        rows = service.table(as_of=_as_of(request))
+        try:
+            rows = service.table(as_of=_as_of(request))
+        except Exception as exc:  # noqa: BLE001 - показываем сообщение вместо 500
+            return _redirect(f"Ошибка чтения данных: {exc}")
         row = next((item for item in rows if item["vendor_code"] == vendor_code), None)
         if row is None:
             return _redirect("Товар не найден")
