@@ -464,6 +464,7 @@ class RepricerService:
                     "zone": decision.zone.value if decision else "not_on_market",
                     "sales_per_day": decision.sales_per_day if decision else None,
                     "days_of_stock": decision.days_of_stock if decision else None,
+                    "base_price_kopecks": snap.product.base_price_kopecks,
                     "current_price_kopecks": decision.current_price_kopecks if decision else None,
                     "recommended_price_kopecks": decision.recommended_price_kopecks if decision else None,
                     "margin_before": decision.margin_before_pct if decision else None,

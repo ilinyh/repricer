@@ -32,6 +32,7 @@
         <th>Продаж/день</th>
         <th>Запас, дн.</th>
         <th>Зона</th>
+        <th>Базовая цена</th>
         <th>Текущая цена</th>
         <th>Рекомендация</th>
         <th>Маржа сейчас</th>
@@ -50,6 +51,7 @@
         <td>{{ num(row.sales_per_day) }}</td>
         <td>{{ days(row.days_of_stock) }}</td>
         <td>{{ zone_label(row.zone) }}{% if row.margin_warning %} ⚠{% endif %}</td>
+        <td>{{ rub(row.base_price_kopecks) }}</td>
         <td>{{ rub(row.current_price_kopecks) }}</td>
         <td>{% if row.price_changed %}<b>{{ rub(row.recommended_price_kopecks) }}</b>{% else %}—{% endif %}</td>
         <td>{{ pct(row.margin_before) }}</td>
