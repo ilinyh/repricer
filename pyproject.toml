@@ -9,6 +9,6 @@ dependencies = []
 dev = ["pytest>=8"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["tests"]
+pythonpath = ["src", "."]
+testpaths = ["tests", "emulator_wb/tests"]
 addopts = "-q"

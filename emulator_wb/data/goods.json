@@ -1,0 +1,9 @@
+{
+  "goods": [
+    {"nmID": 100001, "vendorCode": "SKU-001", "price": 1500, "discount": 10},
+    {"nmID": 100002, "vendorCode": "SKU-002", "price": 890, "discount": 0},
+    {"nmID": 100003, "vendorCode": "SKU-003", "price": 2500, "discount": 15},
+    {"nmID": 100004, "vendorCode": "SKU-004", "price": 300, "discount": 5},
+    {"nmID": 100005, "vendorCode": "SKU-005", "price": 12000, "discount": 20}
+  ]
+}
