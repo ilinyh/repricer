@@ -90,6 +90,30 @@ def test_rerun_does_not_duplicate_recommendation(tmp_path, start_emulator):
     assert len(service.queue()) == 1
 
 
+def test_auto_rerun_does_not_duplicate(tmp_path, start_emulator):
+    service, _client, repo = build(tmp_path, start_emulator, default_goods())
+    repo.set_mode("SKU-OUT", "auto", at=AS_OF)
+    first = service.run(as_of=AS_OF)
+    second = service.run(as_of=AS_OF)
+
+    assert first["created"] == 1
+    assert second["created"] == 0
+    assert second["same_recommendation"] == 1
+    assert len(repo.list_decisions(("auto", "sent"))) == 1
+
+
+def test_approved_is_not_duplicated_before_send(tmp_path, start_emulator):
+    service, _client, repo = build(tmp_path, start_emulator, default_goods())
+    repo.set_mode("SKU-OUT", "recommend", at=AS_OF)
+    service.run(as_of=AS_OF)
+    service.approve()
+
+    result = service.run(as_of=AS_OF)
+
+    assert result["created"] == 0
+    assert len(repo.list_decisions(("approved",))) == 1
+
+
 def test_approve_send_and_apply(tmp_path, start_emulator):
     service, client, repo = build(tmp_path, start_emulator, default_goods())
     repo.set_mode("SKU-OUT", "recommend", at=AS_OF)

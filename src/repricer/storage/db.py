@@ -9,6 +9,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
+# Решения, которые ещё не применены площадкой: по ним нельзя создавать дубликат.
+ACTIVE_STATUSES = ("pending", "approved", "auto", "sent")
+# Из активных замене подлежат все, кроме отправленных в полёте.
+SUPERSEDABLE_STATUSES = ("pending", "approved", "auto")
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
@@ -251,6 +256,28 @@ class Repository:
             (vendor_code,),
         )
         return dict(rows[0]) if rows else None
+
+    def active_for(self, vendor_code: str) -> dict | None:
+        """Последнее решение по товару, ещё не применённое площадкой."""
+
+        marks = ", ".join("?" for _ in ACTIVE_STATUSES)
+        rows = self._query(
+            f"SELECT * FROM decisions WHERE vendor_code = ? AND status IN ({marks}) "
+            "ORDER BY id DESC LIMIT 1",
+            (vendor_code, *ACTIVE_STATUSES),
+        )
+        return dict(rows[0]) if rows else None
+
+    def supersede_active(self, vendor_code: str, *, at: datetime) -> int:
+        """Пометить заменёнными все активные решения, кроме отправленных в полёте."""
+
+        marks = ", ".join("?" for _ in SUPERSEDABLE_STATUSES)
+        cursor = self._execute(
+            f"UPDATE decisions SET status = 'superseded', resolved_at = ? "
+            f"WHERE vendor_code = ? AND status IN ({marks})",
+            (_iso(at), vendor_code, *SUPERSEDABLE_STATUSES),
+        )
+        return cursor.rowcount
 
     def decisions_by_upload(self, upload_id: int, statuses: Iterable[str]) -> list[dict]:
         statuses = tuple(statuses)

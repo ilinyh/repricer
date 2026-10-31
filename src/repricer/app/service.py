@@ -29,6 +29,9 @@ STATUS_SENT = "sent"
 STATUS_APPLIED = "applied"
 STATUS_FAILED = "failed"
 STATUS_QUARANTINE = "quarantine"
+# Активные решения: ещё не применённые площадкой. Повторный прогон не должен
+# создавать по ним дубликат.
+ACTIVE_STATUSES = (STATUS_PENDING, STATUS_APPROVED, STATUS_AUTO, STATUS_SENT)
 
 INT_FIELDS = {"sales_window_days", "pause_hours"}
 
@@ -159,7 +162,7 @@ class RepricerService:
         as_of = as_of or started
         run_id = self.repo.create_run(as_of=as_of, trigger=trigger, started_at=started)
         counts = {"products": 0, "changed": 0, "created": 0, "superseded": 0}
-        counters = {"off": 0, "no_change": 0, "not_on_market": 0, "same_recommendation": 0}
+        counters = {"off": 0, "no_change": 0, "not_on_market": 0, "same_recommendation": 0, "in_flight": 0}
 
         try:
             snapshots = self._snapshot(as_of)
@@ -186,14 +189,18 @@ class RepricerService:
                 counters["off"] += 1
                 continue
 
-            existing = self.repo.pending_for(snap.product.vendor_code)
+            existing = self.repo.active_for(snap.product.vendor_code)
             if existing and int(existing["recommended_price_kopecks"]) == decision.recommended_price_kopecks and int(
                 existing["current_price_kopecks"]
             ) == decision.current_price_kopecks:
                 counters["same_recommendation"] += 1
                 continue
+            if existing and existing["status"] == STATUS_SENT:
+                # Цена уже отправлена и ждёт ответа площадки — вторую не создаём.
+                counters["in_flight"] += 1
+                continue
             if existing:
-                self.repo.supersede_pending(snap.product.vendor_code, at=as_of)
+                self.repo.supersede_active(snap.product.vendor_code, at=as_of)
                 counts["superseded"] += 1
                 self.repo.append_journal(
                     "recommendation_superseded",
