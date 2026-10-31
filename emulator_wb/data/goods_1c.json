@@ -1,0 +1,328 @@
+{
+  "goods": [
+    {
+      "nmID": 200001,
+      "vendorCode": "NYM 1х4",
+      "price": 300,
+      "discount": 0
+    },
+    {
+      "nmID": 200002,
+      "vendorCode": "NYM 1х6",
+      "price": 300,
+      "discount": 0
+    },
+    {
+      "nmID": 200003,
+      "vendorCode": "NYM 3х1,5",
+      "price": 300,
+      "discount": 0
+    },
+    {
+      "nmID": 200004,
+      "vendorCode": "NYM 5х1,5",
+      "price": 450,
+      "discount": 0
+    },
+    {
+      "nmID": 200005,
+      "vendorCode": "NYM 5х35",
+      "price": 450,
+      "discount": 0
+    },
+    {
+      "nmID": 200006,
+      "vendorCode": "Арт-33344555",
+      "price": 101,
+      "discount": 0
+    },
+    {
+      "nmID": 200007,
+      "vendorCode": "Арт-4444",
+      "price": 65,
+      "discount": 0
+    },
+    {
+      "nmID": 200008,
+      "vendorCode": "Арт-56789",
+      "price": 59,
+      "discount": 0
+    },
+    {
+      "nmID": 200009,
+      "vendorCode": "Арт-6666",
+      "price": 50,
+      "discount": 0
+    },
+    {
+      "nmID": 200010,
+      "vendorCode": "Арт-6666888",
+      "price": 49,
+      "discount": 0
+    },
+    {
+      "nmID": 200011,
+      "vendorCode": "Арт-7777",
+      "price": 32,
+      "discount": 0
+    },
+    {
+      "nmID": 200012,
+      "vendorCode": "Арт-777788",
+      "price": 86,
+      "discount": 0
+    },
+    {
+      "nmID": 200013,
+      "vendorCode": "Арт-777888",
+      "price": 81,
+      "discount": 0
+    },
+    {
+      "nmID": 200014,
+      "vendorCode": "Арт-789000",
+      "price": 209,
+      "discount": 0
+    },
+    {
+      "nmID": 200015,
+      "vendorCode": "Арт-7890000",
+      "price": 209,
+      "discount": 0
+    },
+    {
+      "nmID": 200016,
+      "vendorCode": "Арт-800000",
+      "price": 173,
+      "discount": 0
+    },
+    {
+      "nmID": 200017,
+      "vendorCode": "Арт-879000",
+      "price": 86,
+      "discount": 0
+    },
+    {
+      "nmID": 200018,
+      "vendorCode": "Арт-88888",
+      "price": 26,
+      "discount": 0
+    },
+    {
+      "nmID": 200019,
+      "vendorCode": "Арт-888888",
+      "price": 79,
+      "discount": 0
+    },
+    {
+      "nmID": 200020,
+      "vendorCode": "Арт-89000",
+      "price": 52,
+      "discount": 0
+    },
+    {
+      "nmID": 200021,
+      "vendorCode": "Арт-89999",
+      "price": 49,
+      "discount": 0
+    },
+    {
+      "nmID": 200022,
+      "vendorCode": "Арт-980000",
+      "price": 86,
+      "discount": 0
+    },
+    {
+      "nmID": 200023,
+      "vendorCode": "Арт-999001",
+      "price": 81,
+      "discount": 0
+    },
+    {
+      "nmID": 200024,
+      "vendorCode": "Арт-999999",
+      "price": 59,
+      "discount": 0
+    },
+    {
+      "nmID": 200025,
+      "vendorCode": "Б- 130005",
+      "price": 8266,
+      "discount": 0
+    },
+    {
+      "nmID": 200026,
+      "vendorCode": "Б-130006",
+      "price": 8956,
+      "discount": 0
+    },
+    {
+      "nmID": 200027,
+      "vendorCode": "В-789",
+      "price": 1728,
+      "discount": 0
+    },
+    {
+      "nmID": 200028,
+      "vendorCode": "В-987",
+      "price": 1930,
+      "discount": 0
+    },
+    {
+      "nmID": 200029,
+      "vendorCode": "ВН-900",
+      "price": 806,
+      "discount": 0
+    },
+    {
+      "nmID": 200030,
+      "vendorCode": "ВН-901",
+      "price": 3600,
+      "discount": 0
+    },
+    {
+      "nmID": 200031,
+      "vendorCode": "ВО-890",
+      "price": 994,
+      "discount": 0
+    },
+    {
+      "nmID": 200032,
+      "vendorCode": "ВО-900",
+      "price": 3744,
+      "discount": 0
+    },
+    {
+      "nmID": 200033,
+      "vendorCode": "К-120003",
+      "price": 9735,
+      "discount": 0
+    },
+    {
+      "nmID": 200034,
+      "vendorCode": "К-120004",
+      "price": 11232,
+      "discount": 0
+    },
+    {
+      "nmID": 200035,
+      "vendorCode": "К-7778",
+      "price": 10042,
+      "discount": 0
+    },
+    {
+      "nmID": 200036,
+      "vendorCode": "К-980",
+      "price": 5738,
+      "discount": 0
+    },
+    {
+      "nmID": 200037,
+      "vendorCode": "КА-879",
+      "price": 10642,
+      "discount": 0
+    },
+    {
+      "nmID": 200038,
+      "vendorCode": "КВ- 900",
+      "price": 8100,
+      "discount": 0
+    },
+    {
+      "nmID": 200039,
+      "vendorCode": "Л-90",
+      "price": 65,
+      "discount": 0
+    },
+    {
+      "nmID": 200040,
+      "vendorCode": "М-15",
+      "price": 10042,
+      "discount": 0
+    },
+    {
+      "nmID": 200041,
+      "vendorCode": "М-3",
+      "price": 1650,
+      "discount": 0
+    },
+    {
+      "nmID": 200042,
+      "vendorCode": "М-545",
+      "price": 8550,
+      "discount": 0
+    },
+    {
+      "nmID": 200043,
+      "vendorCode": "М-678",
+      "price": 8400,
+      "discount": 0
+    },
+    {
+      "nmID": 200044,
+      "vendorCode": "М-77",
+      "price": 5738,
+      "discount": 0
+    },
+    {
+      "nmID": 200045,
+      "vendorCode": "П-890",
+      "price": 4200,
+      "discount": 0
+    },
+    {
+      "nmID": 200046,
+      "vendorCode": "СО-77777",
+      "price": 8100,
+      "discount": 0
+    },
+    {
+      "nmID": 200047,
+      "vendorCode": "СО-980",
+      "price": 8400,
+      "discount": 0
+    },
+    {
+      "nmID": 200048,
+      "vendorCode": "СТ-910",
+      "price": 1296,
+      "discount": 0
+    },
+    {
+      "nmID": 200049,
+      "vendorCode": "Со-8888",
+      "price": 10042,
+      "discount": 0
+    },
+    {
+      "nmID": 200050,
+      "vendorCode": "Ч-8889",
+      "price": 1470,
+      "discount": 0
+    },
+    {
+      "nmID": 200051,
+      "vendorCode": "Ч-890",
+      "price": 1200,
+      "discount": 0
+    },
+    {
+      "nmID": 200052,
+      "vendorCode": "Ч-980",
+      "price": 1800,
+      "discount": 0
+    },
+    {
+      "nmID": 200053,
+      "vendorCode": "Э-789",
+      "price": 4500,
+      "discount": 0
+    },
+    {
+      "nmID": 200054,
+      "vendorCode": "Э-999",
+      "price": 5516,
+      "discount": 0
+    }
+  ]
+}

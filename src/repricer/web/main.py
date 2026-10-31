@@ -11,7 +11,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from ..adapters.accounting import CsvAccountingSource
+from ..adapters.accounting import CsvAccountingSource, OnecODataSource
 from ..adapters.marketplace import WBClient
 from ..app import RepricerService
 from ..storage import Repository
@@ -46,10 +46,19 @@ def build_service() -> RepricerService:
     db = Path(os.getenv("REPRICER_DB", "data/repricer.db"))
     db.parent.mkdir(parents=True, exist_ok=True)
     repo = Repository(db)
-    accounting = CsvAccountingSource(
-        Path(os.getenv("CSV_PRODUCTS", "data/products.csv")),
-        Path(os.getenv("CSV_SALES", "data/sales.csv")),
-    )
+    if os.getenv("ACCOUNTING_SOURCE", "csv").lower() == "1c":
+        accounting = OnecODataSource(
+            os.getenv("ONEC_URL", "http://localhost:8081/ut115"),
+            user=os.getenv("ONEC_USER", "Администратор"),
+            password=os.getenv("ONEC_PASSWORD", ""),
+            cost_price_type=os.getenv("ONEC_COST_PRICE_TYPE", "Себестоимость"),
+            base_price_type=os.getenv("ONEC_BASE_PRICE_TYPE", "Розничная"),
+        )
+    else:
+        accounting = CsvAccountingSource(
+            Path(os.getenv("CSV_PRODUCTS", "data/products.csv")),
+            Path(os.getenv("CSV_SALES", "data/sales.csv")),
+        )
     marketplace = WBClient(
         os.getenv("WB_BASE_URL", "http://localhost:8090"),
         os.getenv("WB_TOKEN", "local-token"),
