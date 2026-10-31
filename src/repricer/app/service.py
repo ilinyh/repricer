@@ -19,6 +19,7 @@ from ..storage.db import Repository
 from .pricing import choose_price_before
 
 RULES_SETTING = "rules"
+SCHEDULE_SETTING = "schedule_minutes"
 
 STATUS_PENDING = "pending"
 STATUS_APPROVED = "approved"
@@ -83,6 +84,16 @@ class RepricerService:
 
     def save_global_rules(self, data: dict) -> None:
         self.repo.set_setting(RULES_SETTING, json.dumps(data, ensure_ascii=False))
+
+    def schedule_minutes(self) -> int:
+        raw = self.repo.get_setting(SCHEDULE_SETTING, "0")
+        try:
+            return int(raw or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    def set_schedule_minutes(self, value: int) -> None:
+        self.repo.set_setting(SCHEDULE_SETTING, str(max(0, int(value))))
 
     def effective_rules(self, vendor_code: str) -> Rules:
         product = self.repo.get_product(vendor_code)

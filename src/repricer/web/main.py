@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
 from datetime import date, datetime
 from pathlib import Path
 
@@ -13,7 +14,7 @@ from fastapi.templating import Jinja2Templates
 
 from ..adapters.accounting import CsvAccountingSource, OnecODataSource
 from ..adapters.marketplace import WBClient
-from ..app import RepricerService
+from ..app import RepricerService, Scheduler
 from ..storage import Repository
 from .format import (
     EVENT_LABELS,
@@ -66,7 +67,12 @@ def build_service() -> RepricerService:
     return RepricerService(repo, accounting, marketplace)
 
 
-def create_app(service: RepricerService | None = None, *, as_of_default: str | None = None) -> FastAPI:
+def create_app(
+    service: RepricerService | None = None,
+    *,
+    as_of_default: str | None = None,
+    start_scheduler: bool = True,
+) -> FastAPI:
     service = service or build_service()
     templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
     templates.env.globals.update(
@@ -82,8 +88,18 @@ def create_app(service: RepricerService | None = None, *, as_of_default: str | N
         event_label=lambda value: label(EVENT_LABELS, value),
     )
 
-    app = FastAPI(title="Репрайсер")
+    scheduler = Scheduler(service)
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        if start_scheduler:
+            scheduler.start()
+        yield
+        scheduler.stop()
+
+    app = FastAPI(title="Репрайсер", lifespan=lifespan)
     app.state.service = service
+    app.state.scheduler = scheduler
     app.state.as_of_default = (
         as_of_default or os.getenv("REPRICER_AS_OF") or date.today().isoformat()
     )
@@ -159,11 +175,13 @@ def create_app(service: RepricerService | None = None, *, as_of_default: str | N
     async def queue_decision(request: Request):
         form = await request.form()
         action = str(form.get("action"))
-        raw_ids = form.get("ids") or ""
-        if raw_ids == "all":
-            ids = None
+        raw_ids = form.getlist("ids")
+        if not raw_ids:
+            return _redirect("Ничего не выбрано")
+        if "all" in raw_ids:
+            ids: list[int] | None = None
         else:
-            ids = [int(value) for value in str(raw_ids).replace(",", " ").split()]
+            ids = [int(value) for value in raw_ids]
         if action == "approve":
             count = service.approve(ids)
             return _redirect(f"Подтверждено: {count}")
@@ -212,7 +230,11 @@ def create_app(service: RepricerService | None = None, *, as_of_default: str | N
         return templates.TemplateResponse(
             request,
             "settings.html",
-            _context(request, rules=service.global_rules()),
+            _context(
+                request,
+                rules=service.global_rules(),
+                schedule_minutes=service.schedule_minutes(),
+            ),
         )
 
     @app.post("/settings")
@@ -220,6 +242,11 @@ def create_app(service: RepricerService | None = None, *, as_of_default: str | N
         form = await request.form()
         data = {field: str(form.get(field)) for field in RULE_FIELDS if form.get(field) not in (None, "")}
         service.save_global_rules(data)
+        if form.get("schedule_minutes") not in (None, ""):
+            try:
+                service.set_schedule_minutes(int(str(form.get("schedule_minutes"))))
+            except ValueError:
+                pass
         service.repo.append_journal("settings_changed", at=service.clock(), payload=data)
         return _redirect("Настройки сохранены")
 

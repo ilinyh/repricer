@@ -30,7 +30,7 @@ def build(tmp_path, start_emulator):
         WBClient(url, "token"),
         clock=lambda: datetime(2024, 3, 31, 12, 0, 0),
     )
-    return TestClient(create_app(service, as_of_default=AS_OF)), service, repo
+    return TestClient(create_app(service, as_of_default=AS_OF, start_scheduler=False)), service, repo
 
 
 def test_index_shows_zones_and_states(tmp_path, start_emulator):
@@ -75,6 +75,27 @@ def test_full_cycle_through_forms(tmp_path, start_emulator):
     product = client.get("/product/T-OUT")
     assert product.status_code == 200
     assert "применена" in product.text
+
+
+def test_approve_all_selected_ids(tmp_path, start_emulator):
+    client, service, repo = build(tmp_path, start_emulator)
+    moment = datetime(2024, 3, 31, 12, 0, 0)
+    repo.set_mode("T-OUT", "recommend", at=moment)
+    repo.set_mode("T-OVER", "recommend", at=moment)
+    client.post("/run", data={"as_of": AS_OF}, follow_redirects=False)
+
+    queue = service.queue()
+    assert len(queue) == 2
+    ids = [str(row["id"]) for row in queue]
+
+    client.post(
+        "/queue/decision",
+        data={"action": "approve", "ids": ids},
+        follow_redirects=False,
+    )
+
+    assert len(repo.list_decisions(("approved",))) == 2
+    assert service.queue() == []
 
 
 def test_reject_hides_from_queue(tmp_path, start_emulator):
