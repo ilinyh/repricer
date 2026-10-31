@@ -1,0 +1,111 @@
+"""Веб-интерфейс: таблица, очередь, сквозной цикл через формы."""
+
+from __future__ import annotations
+
+import time
+from datetime import datetime
+from decimal import Decimal
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+from emulator_wb.app.store import load_goods
+from repricer.adapters.accounting import CsvAccountingSource
+from repricer.adapters.marketplace import WBClient
+from repricer.app import RepricerService
+from repricer.storage import Repository
+from repricer.web import create_app
+
+ROOT = Path(__file__).resolve().parent.parent
+AS_OF = "2024-03-31"
+
+
+def build(tmp_path, start_emulator):
+    goods = load_goods(ROOT / "emulator_wb" / "data" / "goods.json")
+    url = start_emulator(goods)
+    repo = Repository(tmp_path / "web.db")
+    service = RepricerService(
+        repo,
+        CsvAccountingSource(ROOT / "data" / "products.csv", ROOT / "data" / "sales.csv"),
+        WBClient(url, "token"),
+        clock=lambda: datetime(2024, 3, 31, 12, 0, 0),
+    )
+    return TestClient(create_app(service, as_of_default=AS_OF)), service, repo
+
+
+def test_index_shows_zones_and_states(tmp_path, start_emulator):
+    client, _service, _repo = build(tmp_path, start_emulator)
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "T-OUT" in response.text
+    assert "аутсток" in response.text
+    assert "оверсток" in response.text
+    assert "нет в наличии" in response.text
+    assert "нет на площадке" in response.text
+
+
+def test_full_cycle_through_forms(tmp_path, start_emulator):
+    client, _service, repo = build(tmp_path, start_emulator)
+
+    client.post("/product/T-OUT/mode", data={"mode": "recommend"}, follow_redirects=False)
+    run = client.post("/run", data={"as_of": AS_OF}, follow_redirects=False)
+    assert run.status_code == 303
+
+    queue = client.get("/queue")
+    assert "T-OUT" in queue.text
+
+    client.post(
+        "/queue/decision", data={"action": "approve", "ids": "all"}, follow_redirects=False
+    )
+    send = client.post("/send", follow_redirects=False)
+    assert send.status_code == 303
+
+    for _ in range(300):
+        client.post("/poll", follow_redirects=False)
+        if repo.list_decisions(("applied",)):
+            break
+        time.sleep(0.01)
+
+    applied = repo.list_decisions(("applied",))
+    assert applied and applied[0]["vendor_code"] == "T-OUT"
+    assert applied[0]["actual_price_kopecks"] == 353300  # 3430 × 1,03 → 3533 ₽
+
+    product = client.get("/product/T-OUT")
+    assert product.status_code == 200
+    assert "применена" in product.text
+
+
+def test_reject_hides_from_queue(tmp_path, start_emulator):
+    client, _service, repo = build(tmp_path, start_emulator)
+    repo.set_mode("T-OUT", "recommend", at=datetime(2024, 3, 31, 12, 0, 0))
+    client.post("/run", data={"as_of": AS_OF}, follow_redirects=False)
+    identifier = client.get("/queue").text
+    assert "T-OUT" in identifier
+
+    client.post(
+        "/queue/decision", data={"action": "reject", "ids": "all"}, follow_redirects=False
+    )
+
+    assert "T-OUT" not in client.get("/queue").text
+    assert repo.list_decisions(("rejected",))
+
+
+def test_settings_page_updates_global_rules(tmp_path, start_emulator):
+    client, service, _repo = build(tmp_path, start_emulator)
+
+    assert client.get("/settings").status_code == 200
+    client.post("/settings", data={"step_pct": "5"}, follow_redirects=False)
+
+    assert service.global_rules().step_pct == Decimal("5")
+
+
+def test_filters_by_zone(tmp_path, start_emulator):
+    client, _service, _repo = build(tmp_path, start_emulator)
+
+    response = client.get("/", params={"zone": "outage"})
+
+    assert response.status_code == 200
+    assert "T-OUT" in response.text
+    assert "T-OVER" not in response.text

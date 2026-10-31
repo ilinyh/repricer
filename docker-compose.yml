@@ -1,0 +1,30 @@
+services:
+  emulator:
+    build: ./emulator_wb
+    ports:
+      - "8090:8090"
+    environment:
+      WB_APPLY_DELAY_SECONDS: "3"
+      WB_QUARANTINE_PCT: "30"
+      WB_SEED_PATH: /seed/goods.json
+    volumes:
+      - ./emulator_wb/data/goods.json:/seed/goods.json:ro
+    command: ["uvicorn", "emulator_wb.app.main:app", "--host", "0.0.0.0", "--port", "8090"]
+
+  repricer:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      WB_BASE_URL: http://emulator:8090
+      WB_TOKEN: demo-token
+      REPRICER_DB: /data/repricer.db
+      CSV_PRODUCTS: /data/products.csv
+      CSV_SALES: /data/sales.csv
+      REPRICER_AS_OF: "2024-03-31"
+    volumes:
+      - ./data:/data
+    depends_on:
+      - emulator
+    command:
+      ["uvicorn", "repricer.web.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8080"]

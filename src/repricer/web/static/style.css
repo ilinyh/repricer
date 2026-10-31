@@ -1,0 +1,25 @@
+* { box-sizing: border-box; }
+body { font-family: Segoe UI, Arial, sans-serif; margin: 0; color: #1c1c1c; background: #f7f7f9; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 10px 16px; background: #20232a; color: #fff; }
+header a { color: #9fd3ff; text-decoration: none; margin-right: 10px; }
+header form.inline, footer { font-size: 13px; }
+main { padding: 16px; }
+h1 { font-size: 20px; }
+h2 { font-size: 16px; margin-top: 24px; }
+table { border-collapse: collapse; width: 100%; background: #fff; font-size: 13px; }
+th, td { border: 1px solid #ddd; padding: 5px 7px; text-align: left; vertical-align: top; }
+th { background: #eef1f5; }
+form.inline { display: inline-flex; gap: 4px; align-items: center; margin-right: 8px; }
+form.rules { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: 8px; background: #fff; padding: 12px; border: 1px solid #ddd; }
+form.rules label { display: flex; justify-content: space-between; gap: 8px; }
+input, select, button { font: inherit; padding: 3px 6px; }
+button { cursor: pointer; }
+.message { background: #fff3cd; border: 1px solid #ffe08a; padding: 8px 12px; margin: 0 16px; }
+.hint { color: #666; font-size: 12px; }
+.tag { display: inline-block; background: #e8eefc; color: #2b4d8f; border-radius: 3px; padding: 1px 5px; margin-left: 4px; font-size: 11px; }
+tr.zone-outage td { background: #fff4ec; }
+tr.zone-overstock td { background: #eef8ee; }
+tr.zone-no_stock td { background: #f2f2f2; color: #777; }
+tr.zone-not_on_market td { background: #fdf0f0; }
+table.card { max-width: 760px; }
+footer { padding: 10px 16px; color: #666; }

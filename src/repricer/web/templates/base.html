@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Репрайсер</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+    <strong>Репрайсер</strong>
+    <nav>
+        <a href="/">Товары</a>
+        <a href="/queue">Очередь ({{ pending_count }})</a>
+        <a href="/settings">Настройки правил</a>
+    </nav>
+    <form method="post" action="/run" class="inline">
+        <input type="date" name="as_of" value="{{ as_of }}">
+        <button type="submit">Пересчитать сейчас</button>
+    </form>
+    <form method="post" action="/send" class="inline">
+        <button type="submit">Отправить одобренные</button>
+    </form>
+    <form method="post" action="/poll" class="inline">
+        <button type="submit">Обновить статусы</button>
+    </form>
+</header>
+{% if message %}<p class="message">{{ message }}</p>{% endif %}
+<main>
+{% block content %}{% endblock %}
+</main>
+<footer>Последний прогон: {{ last_run }}</footer>
+</body>
+</html>

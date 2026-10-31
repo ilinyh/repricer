@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Настройки правил</h1>
+<form method="post" action="/settings" class="rules">
+    <label>Окно продаж, дн. <input name="sales_window_days" value="{{ rules.sales_window_days }}"></label>
+    <label>Граница аутстока, дн. <input name="outage_days" value="{{ rules.outage_days }}"></label>
+    <label>Граница оверстока, дн. <input name="overstock_days" value="{{ rules.overstock_days }}"></label>
+    <label>Шаг, % <input name="step_pct" value="{{ rules.step_pct }}"></label>
+    <label>Мин. маржа, % <input name="min_margin_pct" value="{{ rules.min_margin_pct }}"></label>
+    <label>Макс. скидка от базовой, % <input name="max_discount_pct" value="{{ rules.max_discount_pct }}"></label>
+    <label>Макс. наценка к базовой, % <input name="max_markup_pct" value="{{ rules.max_markup_pct }}"></label>
+    <label>Пауза после изменения, ч <input name="pause_hours" value="{{ rules.pause_hours }}"></label>
+    <button type="submit">Сохранить</button>
+</form>
+<p class="hint">Значения по умолчанию совпадают с ТЗ. Переопределяются на карточке товара.</p>
+{% endblock %}

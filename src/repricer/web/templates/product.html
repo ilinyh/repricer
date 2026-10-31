@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ row.vendor_code }} — {{ row.name }}</h1>
+<table class="card">
+    <tr><th>Зона</th><td>{{ zone_label(row.zone) }}{% if row.margin_warning %} ⚠ маржа ниже минимальной{% endif %}</td></tr>
+    <tr><th>Остаток</th><td>{{ num(row.stock_qty) }} шт.</td></tr>
+    <tr><th>Продаж в день</th><td>{{ num(row.sales_per_day) }}</td></tr>
+    <tr><th>Запас</th><td>{{ days(row.days_of_stock) }} дн.</td></tr>
+    <tr><th>Текущая цена</th><td>{{ rub(row.current_price_kopecks) }}</td></tr>
+    <tr><th>Рекомендованная цена</th><td>{% if row.price_changed %}<b>{{ rub(row.recommended_price_kopecks) }}</b>{% else %}—{% endif %}</td></tr>
+    <tr><th>Маржа</th><td>{{ pct(row.margin_before) }} → {{ pct(row.margin_after) }}</td></tr>
+    <tr><th>Причина</th><td>{{ reason_label(row.reason) }}. {{ row.message }}
+        {% for limiter in row.limiters %}<span class="tag">{{ limiter_label(limiter) }}</span>{% endfor %}</td></tr>
+</table>
+
+<h2>Режим</h2>
+<form method="post" action="/product/{{ row.vendor_code }}/mode" class="inline">
+    <select name="mode">
+        {% for value, text in [('off','выключен'),('recommend','рекомендация'),('auto','авто')] %}
+        <option value="{{ value }}" {% if product.mode == value %}selected{% endif %}>{{ text }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Сохранить режим</button>
+</form>
+
+<h2>Переопределение правил</h2>
+<form method="post" action="/product/{{ row.vendor_code }}/overrides" class="rules">
+    {% set override = product.overrides %}
+    <label>Окно продаж, дн. <input name="sales_window_days" value="{{ override.get('sales_window_days','') }}" placeholder="{{ rules.sales_window_days }}"></label>
+    <label>Граница аутстока, дн. <input name="outage_days" value="{{ override.get('outage_days','') }}" placeholder="{{ rules.outage_days }}"></label>
+    <label>Граница оверстока, дн. <input name="overstock_days" value="{{ override.get('overstock_days','') }}" placeholder="{{ rules.overstock_days }}"></label>
+    <label>Шаг, % <input name="step_pct" value="{{ override.get('step_pct','') }}" placeholder="{{ rules.step_pct }}"></label>
+    <label>Мин. маржа, % <input name="min_margin_pct" value="{{ override.get('min_margin_pct','') }}" placeholder="{{ rules.min_margin_pct }}"></label>
+    <label>Макс. скидка от базовой, % <input name="max_discount_pct" value="{{ override.get('max_discount_pct','') }}" placeholder="{{ rules.max_discount_pct }}"></label>
+    <label>Макс. наценка к базовой, % <input name="max_markup_pct" value="{{ override.get('max_markup_pct','') }}" placeholder="{{ rules.max_markup_pct }}"></label>
+    <label>Пауза, ч <input name="pause_hours" value="{{ override.get('pause_hours','') }}" placeholder="{{ rules.pause_hours }}"></label>
+    <button type="submit">Сохранить</button>
+</form>
+<p class="hint">Пустое поле — берётся глобальное значение.</p>
+
+<h2>Журнал решений</h2>
+<table>
+    <thead><tr><th>Когда</th><th>Событие</th><th>Детали</th></tr></thead>
+    <tbody>
+    {% for item in journal %}
+    <tr>
+        <td>{{ item.created_at }}</td>
+        <td>{{ event_label(item.event) }}</td>
+        <td>{{ item.payload }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

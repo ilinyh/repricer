@@ -133,7 +133,7 @@ class RepricerService:
                     base_price_kopecks=product.base_price_kopecks,
                     current_price_kopecks=good.discounted_price_kopecks,
                     sales_by_day=product.sales_by_day,
-                    last_price_change_at=self.repo.last_applied_at(code),
+                    last_price_change_at=self.repo.last_applied_at(code, before=as_of),
                 ),
                 rules,
                 as_of=as_of,

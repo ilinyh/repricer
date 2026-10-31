@@ -281,12 +281,19 @@ class Repository:
         )
         return cursor.rowcount
 
-    def last_applied_at(self, vendor_code: str) -> datetime | None:
-        rows = self._query(
-            "SELECT MAX(resolved_at) AS at FROM decisions "
-            "WHERE vendor_code = ? AND status = 'applied'",
-            (vendor_code,),
-        )
+    def last_applied_at(self, vendor_code: str, *, before: datetime | None = None) -> datetime | None:
+        if before is None:
+            rows = self._query(
+                "SELECT MAX(resolved_at) AS at FROM decisions "
+                "WHERE vendor_code = ? AND status = 'applied'",
+                (vendor_code,),
+            )
+        else:
+            rows = self._query(
+                "SELECT MAX(resolved_at) AS at FROM decisions "
+                "WHERE vendor_code = ? AND status = 'applied' AND resolved_at <= ?",
+                (vendor_code, _iso(before)),
+            )
         return parse_dt(rows[0]["at"]) if rows else None
 
     # --- задачи площадки ------------------------------------------------

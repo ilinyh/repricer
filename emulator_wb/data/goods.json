@@ -1,9 +1,100 @@
 {
   "goods": [
-    {"nmID": 100001, "vendorCode": "SKU-001", "price": 1500, "discount": 10},
-    {"nmID": 100002, "vendorCode": "SKU-002", "price": 890, "discount": 0},
-    {"nmID": 100003, "vendorCode": "SKU-003", "price": 2500, "discount": 15},
-    {"nmID": 100004, "vendorCode": "SKU-004", "price": 300, "discount": 5},
-    {"nmID": 100005, "vendorCode": "SKU-005", "price": 12000, "discount": 20}
+    {
+      "nmID": 100001,
+      "vendorCode": "T-NORM",
+      "price": 1500,
+      "discount": 0
+    },
+    {
+      "nmID": 100002,
+      "vendorCode": "T-OUT",
+      "price": 3430,
+      "discount": 0
+    },
+    {
+      "nmID": 100003,
+      "vendorCode": "T-OVER",
+      "price": 850,
+      "discount": 0
+    },
+    {
+      "nmID": 100004,
+      "vendorCode": "T-CORRIDOR",
+      "price": 1060,
+      "discount": 0
+    },
+    {
+      "nmID": 100005,
+      "vendorCode": "T-MARGIN",
+      "price": 1380,
+      "discount": 0
+    },
+    {
+      "nmID": 100006,
+      "vendorCode": "T-WARN",
+      "price": 1400,
+      "discount": 0
+    },
+    {
+      "nmID": 100007,
+      "vendorCode": "T-NOSALES",
+      "price": 1500,
+      "discount": 0
+    },
+    {
+      "nmID": 100008,
+      "vendorCode": "T-ZERO",
+      "price": 1500,
+      "discount": 0
+    },
+    {
+      "nmID": 100009,
+      "vendorCode": "T-CEIL",
+      "price": 8900,
+      "discount": 0
+    },
+    {
+      "nmID": 100010,
+      "vendorCode": "T-ATCEIL",
+      "price": 9000,
+      "discount": 0
+    },
+    {
+      "nmID": 100011,
+      "vendorCode": "T-WARNOUT",
+      "price": 1410,
+      "discount": 0
+    },
+    {
+      "nmID": 100012,
+      "vendorCode": "T-EXACT14",
+      "price": 1500,
+      "discount": 0
+    },
+    {
+      "nmID": 100013,
+      "vendorCode": "T-EXACT60",
+      "price": 1500,
+      "discount": 0
+    },
+    {
+      "nmID": 100014,
+      "vendorCode": "T-OVER60",
+      "price": 1500,
+      "discount": 0
+    },
+    {
+      "nmID": 100015,
+      "vendorCode": "T-DISC",
+      "price": 3800,
+      "discount": 10
+    },
+    {
+      "nmID": 100016,
+      "vendorCode": "T-CHEAP",
+      "price": 10,
+      "discount": 0
+    }
   ]
 }

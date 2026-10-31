@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Очередь рекомендаций</h1>
+{% if not rows %}
+<p>Очередь пуста.</p>
+{% else %}
+<form method="post" action="/queue/decision">
+    <table>
+        <thead>
+        <tr>
+            <th></th>
+            <th>Артикул</th>
+            <th>Название</th>
+            <th>Зона</th>
+            <th>Текущая</th>
+            <th>Рекомендация</th>
+            <th>Маржа до → после</th>
+            <th>Причина</th>
+            <th>Создано</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+        <tr class="zone-{{ row.zone }}">
+            <td><input type="checkbox" name="ids" value="{{ row.id }}"></td>
+            <td><a href="/product/{{ row.vendor_code }}">{{ row.vendor_code }}</a></td>
+            <td>{{ row.name }}</td>
+            <td>{{ zone_label(row.zone) }}</td>
+            <td>{{ rub(row.current_price_kopecks) }}</td>
+            <td><b>{{ rub(row.recommended_price_kopecks) }}</b></td>
+            <td>{{ pct(row.margin_before) }} → {{ pct(row.margin_after) }}</td>
+            <td title="{{ row.message }}">{{ reason_label(row.reason) }}</td>
+            <td>{{ row.created_at }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <p>
+        <button type="submit" name="action" value="approve">Подтвердить выбранные</button>
+        <button type="submit" name="action" value="reject">Отклонить выбранные</button>
+        <button type="submit" name="action" value="approve" onclick="document.querySelectorAll('input[name=ids]').forEach(c=>c.checked=true)">Подтвердить все</button>
+    </p>
+</form>
+{% endif %}
+{% endblock %}
