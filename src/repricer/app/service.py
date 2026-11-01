@@ -334,10 +334,6 @@ class RepricerService:
             ]
         return self._send_rows(rows)
 
-    def send_auto(self) -> dict:
-        """Отправить только решения в статусе «авто» (для автоотправки планировщиком)."""
-        return self._send_rows(self.repo.list_decisions((STATUS_AUTO,)))
-
     def _send_rows(self, rows: list[dict]) -> dict:
         if not rows:
             return {"sent": 0, "failed": 0, "message": "Нет решений к отправке"}

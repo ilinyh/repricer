@@ -48,7 +48,8 @@ class Scheduler:
         try:
             result = self.service.run(as_of=self.service.clock(), trigger=trigger)
             if self.service.auto_send_enabled():
-                self.service.send_auto()
+                # То же, что кнопка «Отправить одобренные»: одобренные и авто.
+                self.service.send()
             if self.poll:
                 self.service.poll()
             return result

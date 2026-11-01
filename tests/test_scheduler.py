@@ -70,7 +70,7 @@ def test_auto_send_setting_round_trip(tmp_path, start_emulator):
     assert service.auto_send_enabled() is False
 
 
-def test_auto_send_sends_only_auto(tmp_path, start_emulator):
+def test_auto_send_sends_approved_and_auto(tmp_path, start_emulator):
     service, repo = build(tmp_path, start_emulator)
     repo.set_mode("T-DISC", "auto", at=AS_OF)
     repo.set_mode("T-OUT", "recommend", at=AS_OF)
@@ -82,13 +82,11 @@ def test_auto_send_sends_only_auto(tmp_path, start_emulator):
     service.set_auto_send(True)
     scheduler.tick()
 
-    # Авто-решение отправлено; при нулевой задержке эмулятора оно уже применено.
-    auto_rows = repo.list_decisions(("sent", "applied"))
-    assert [row["vendor_code"] for row in auto_rows] == ["T-DISC"]
-    assert sorted(row["vendor_code"] for row in repo.list_decisions(("approved",))) == [
-        "T-OUT",
-        "T-OVER",
-    ]
+    # Автоотправка делает то же, что кнопка: одобренные и авто.
+    sent = repo.list_decisions(("sent", "applied"))
+    assert sorted(row["vendor_code"] for row in sent) == ["T-DISC", "T-OUT", "T-OVER"]
+    assert repo.list_decisions(("approved",)) == []
+    assert repo.list_decisions(("pending",)) == []
 
 
 def test_auto_send_disabled_sends_nothing(tmp_path, start_emulator):
