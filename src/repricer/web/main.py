@@ -222,6 +222,25 @@ def create_app(
         )
         return _redirect(f"Режим {vendor_code}: {label(MODE_LABELS, mode)}")
 
+    @app.post("/products/mode")
+    async def set_mode_all(request: Request):
+        form = await request.form()
+        mode = str(form.get("mode") or "")
+        codes = [str(code).strip() for code in form.getlist("codes") if str(code).strip()]
+        if mode not in ("off", "recommend", "auto"):
+            return _redirect("Режим не выбран")
+        if not codes:
+            return _redirect("Нет строк для изменения")
+        now = service.clock()
+        for code in codes:
+            service.repo.set_mode(code, mode, at=now)
+            service.repo.append_journal(
+                "mode_changed", at=now, vendor_code=code, payload={"mode": mode}
+            )
+        return _redirect(
+            f"Режим «{label(MODE_LABELS, mode)}» установлен для {len(codes)} товаров"
+        )
+
     @app.post("/product/{vendor_code}/overrides")
     async def set_overrides(vendor_code: str, request: Request):
         form = await request.form()

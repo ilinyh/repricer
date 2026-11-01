@@ -177,6 +177,33 @@ def test_filters_by_zone(tmp_path, start_emulator):
     assert "T-OVER" not in response.text
 
 
+def test_bulk_mode_applies_only_to_displayed_rows(tmp_path, start_emulator):
+    client, _service, repo = build(tmp_path, start_emulator)
+
+    page = client.get("/", params={"zone": "outage"})
+    assert 'action="/products/mode"' in page.text
+    assert 'value="T-OUT"' in page.text
+    assert 'value="T-OVER"' not in page.text
+
+    client.post(
+        "/products/mode",
+        data={"mode": "auto", "codes": ["T-OUT", "T-CEIL"]},
+        follow_redirects=False,
+    )
+
+    assert repo.get_product("T-OUT")["mode"] == "auto"
+    assert repo.get_product("T-CEIL")["mode"] == "auto"
+    assert repo.get_product("T-OVER")["mode"] == "off"
+
+
+def test_bulk_mode_requires_mode(tmp_path, start_emulator):
+    client, _service, repo = build(tmp_path, start_emulator)
+
+    client.post("/products/mode", data={"codes": "T-OUT"}, follow_redirects=False)
+
+    assert repo.get_product("T-OUT")["mode"] == "off"
+
+
 def test_marketplace_error_is_shown_not_500(tmp_path, start_emulator):
     client, service, _repo = build(tmp_path, start_emulator)
 
