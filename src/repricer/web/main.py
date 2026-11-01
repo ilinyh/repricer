@@ -242,6 +242,7 @@ def create_app(
                 request,
                 rules=service.global_rules(),
                 schedule_minutes=service.schedule_minutes(),
+                auto_send=service.auto_send_enabled(),
             ),
         )
 
@@ -255,7 +256,13 @@ def create_app(
                 service.set_schedule_minutes(int(str(form.get("schedule_minutes"))))
             except ValueError:
                 pass
-        service.repo.append_journal("settings_changed", at=service.clock(), payload=data)
+        auto_send = form.get("auto_send") not in (None, "")
+        service.set_auto_send(auto_send)
+        service.repo.append_journal(
+            "settings_changed",
+            at=service.clock(),
+            payload={"rules": data, "auto_send": auto_send},
+        )
         return _redirect("Настройки сохранены")
 
     return app

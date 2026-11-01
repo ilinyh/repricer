@@ -139,6 +139,20 @@ def test_approved_is_not_duplicated_before_send(tmp_path, start_emulator):
     assert len(repo.list_decisions(("approved",))) == 1
 
 
+def test_send_auto_sends_only_auto(tmp_path, start_emulator):
+    service, _client, repo = build(tmp_path, start_emulator, default_goods())
+    repo.set_mode("SKU-OUT", "auto", at=AS_OF)
+    repo.set_mode("SKU-OVER", "recommend", at=AS_OF)
+    service.run(as_of=AS_OF)
+    service.approve()
+
+    result = service.send_auto()
+
+    assert result["sent"] == 1
+    assert [row["vendor_code"] for row in repo.list_decisions(("sent",))] == ["SKU-OUT"]
+    assert [row["vendor_code"] for row in repo.list_decisions(("approved",))] == ["SKU-OVER"]
+
+
 def test_approve_send_and_apply(tmp_path, start_emulator):
     service, client, repo = build(tmp_path, start_emulator, default_goods())
     repo.set_mode("SKU-OUT", "recommend", at=AS_OF)

@@ -20,6 +20,7 @@ from .pricing import choose_price_before
 
 RULES_SETTING = "rules"
 SCHEDULE_SETTING = "schedule_minutes"
+AUTO_SEND_SETTING = "auto_send"
 
 STATUS_PENDING = "pending"
 STATUS_APPROVED = "approved"
@@ -97,6 +98,12 @@ class RepricerService:
 
     def set_schedule_minutes(self, value: int) -> None:
         self.repo.set_setting(SCHEDULE_SETTING, str(max(0, int(value))))
+
+    def auto_send_enabled(self) -> bool:
+        return self.repo.get_setting(AUTO_SEND_SETTING, "0") == "1"
+
+    def set_auto_send(self, enabled: bool) -> None:
+        self.repo.set_setting(AUTO_SEND_SETTING, "1" if enabled else "0")
 
     def effective_rules(self, vendor_code: str) -> Rules:
         product = self.repo.get_product(vendor_code)
@@ -325,6 +332,13 @@ class RepricerService:
                 for row in (self.repo.get_decision(int(i)) for i in decision_ids)
                 if row and row["status"] in (STATUS_APPROVED, STATUS_AUTO)
             ]
+        return self._send_rows(rows)
+
+    def send_auto(self) -> dict:
+        """Отправить только решения в статусе «авто» (для автоотправки планировщиком)."""
+        return self._send_rows(self.repo.list_decisions((STATUS_AUTO,)))
+
+    def _send_rows(self, rows: list[dict]) -> dict:
         if not rows:
             return {"sent": 0, "failed": 0, "message": "Нет решений к отправке"}
 

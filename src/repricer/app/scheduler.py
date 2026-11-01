@@ -47,6 +47,8 @@ class Scheduler:
             return None
         try:
             result = self.service.run(as_of=self.service.clock(), trigger=trigger)
+            if self.service.auto_send_enabled():
+                self.service.send_auto()
             if self.poll:
                 self.service.poll()
             return result

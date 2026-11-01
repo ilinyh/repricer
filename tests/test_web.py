@@ -144,6 +144,27 @@ def test_settings_page_updates_global_rules(tmp_path, start_emulator):
     assert service.global_rules().step_pct == Decimal("5")
 
 
+def test_settings_auto_send_checkbox(tmp_path, start_emulator):
+    client, service, _repo = build(tmp_path, start_emulator)
+
+    client.post(
+        "/settings",
+        data={"sales_window_days": "14", "auto_send": "1"},
+        follow_redirects=False,
+    )
+    assert service.auto_send_enabled() is True
+    page = client.get("/settings")
+    assert "Автоотправка" in page.text
+    assert "checked" in page.text
+
+    client.post(
+        "/settings",
+        data={"sales_window_days": "14"},
+        follow_redirects=False,
+    )
+    assert service.auto_send_enabled() is False
+
+
 def test_filters_by_zone(tmp_path, start_emulator):
     client, _service, _repo = build(tmp_path, start_emulator)
 

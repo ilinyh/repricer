@@ -11,7 +11,11 @@
     <label>Макс. наценка к базовой, % <input name="max_markup_pct" value="{{ rules.max_markup_pct }}"></label>
     <label>Пауза после изменения, ч <input name="pause_hours" value="{{ rules.pause_hours }}"></label>
     <label>Автопересчёт, мин (0 — выключен) <input name="schedule_minutes" value="{{ schedule_minutes }}"></label>
+    <label class="check">Автоотправка <input type="checkbox" name="auto_send" value="1" {% if auto_send %}checked{% endif %}></label>
     <button type="submit">Сохранить</button>
 </form>
 <p class="hint">Значения по умолчанию совпадают с ТЗ. Переопределяются на карточке товара.</p>
+<p class="hint">«Автоотправка» работает при автопересчёте больше нуля: после планового прогона
+планировщик отправляет только решения со статусом «авто». Подтверждённые — по кнопке
+«Отправить одобренные».</p>
 {% endblock %}

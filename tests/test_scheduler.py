@@ -58,3 +58,46 @@ def test_start_stop_is_safe_when_disabled(tmp_path, start_emulator):
     scheduler.stop()
 
     assert scheduler.interval_minutes() == 0
+
+
+def test_auto_send_setting_round_trip(tmp_path, start_emulator):
+    service, _repo = build(tmp_path, start_emulator)
+
+    assert service.auto_send_enabled() is False
+    service.set_auto_send(True)
+    assert service.auto_send_enabled() is True
+    service.set_auto_send(False)
+    assert service.auto_send_enabled() is False
+
+
+def test_auto_send_sends_only_auto(tmp_path, start_emulator):
+    service, repo = build(tmp_path, start_emulator)
+    repo.set_mode("T-DISC", "auto", at=AS_OF)
+    repo.set_mode("T-OUT", "recommend", at=AS_OF)
+    repo.set_mode("T-OVER", "recommend", at=AS_OF)
+    scheduler = Scheduler(service)
+
+    scheduler.tick()
+    service.approve()
+    service.set_auto_send(True)
+    scheduler.tick()
+
+    # Авто-решение отправлено; при нулевой задержке эмулятора оно уже применено.
+    auto_rows = repo.list_decisions(("sent", "applied"))
+    assert [row["vendor_code"] for row in auto_rows] == ["T-DISC"]
+    assert sorted(row["vendor_code"] for row in repo.list_decisions(("approved",))) == [
+        "T-OUT",
+        "T-OVER",
+    ]
+
+
+def test_auto_send_disabled_sends_nothing(tmp_path, start_emulator):
+    service, repo = build(tmp_path, start_emulator)
+    repo.set_mode("T-DISC", "auto", at=AS_OF)
+    scheduler = Scheduler(service)
+
+    scheduler.tick()
+
+    assert repo.list_decisions(("auto",))
+    assert repo.list_decisions(("sent",)) == []
+    assert repo.tasks_with_status(1) == []
