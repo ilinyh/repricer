@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Очередь рекомендаций</h1>
+<h1>Очередь решений</h1>
+<p class="hint">«Ждёт подтверждения» — подтвердите или отклоните. «Авто» уйдёт при отправке без
+подтверждения, но до отправки его можно отклонить.</p>
 {% if not rows %}
 <p>Очередь пуста.</p>
 {% else %}
@@ -11,6 +13,7 @@
             <th></th>
             <th>Артикул</th>
             <th>Название</th>
+            <th>Статус</th>
             <th>Зона</th>
             <th>Текущая</th>
             <th>Рекомендация</th>
@@ -25,6 +28,7 @@
             <td><input type="checkbox" name="ids" value="{{ row.id }}"></td>
             <td><a href="/product/{{ row.vendor_code }}">{{ row.vendor_code }}</a></td>
             <td>{{ row.name }}</td>
+            <td>{% if row.status == 'auto' %}<span class="tag">авто</span>{% else %}ждёт подтверждения{% endif %}</td>
             <td>{{ zone_label(row.zone) }}</td>
             <td>{{ rub(row.current_price_kopecks) }}</td>
             <td><b>{{ rub(row.recommended_price_kopecks) }}</b></td>
@@ -38,7 +42,7 @@
     <p>
         <button type="submit" name="action" value="approve">Подтвердить выбранные</button>
         <button type="submit" name="action" value="reject">Отклонить выбранные</button>
-        <button type="submit" name="action" value="approve" onclick="document.querySelectorAll('input[name=ids]').forEach(c=>c.checked=true)">Подтвердить все</button>
+        <button type="submit" name="action" value="approve" onclick="document.querySelectorAll('input[name=ids]').forEach(c=>c.checked=true)">Подтвердить все ожидающие</button>
     </p>
 </form>
 {% endif %}

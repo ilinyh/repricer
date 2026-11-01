@@ -102,6 +102,31 @@ def test_auto_rerun_does_not_duplicate(tmp_path, start_emulator):
     assert len(repo.list_decisions(("auto", "sent"))) == 1
 
 
+def test_auto_is_visible_in_queue_and_can_be_rejected(tmp_path, start_emulator):
+    service, client, repo = build(tmp_path, start_emulator, default_goods())
+    repo.set_mode("SKU-OUT", "auto", at=AS_OF)
+    service.run(as_of=AS_OF)
+
+    assert [row["status"] for row in service.queue()] == ["auto"]
+
+    assert service.reject() == 1
+    assert repo.list_decisions(("auto",)) == []
+    assert [row["vendor_code"] for row in repo.list_decisions(("rejected",))] == ["SKU-OUT"]
+
+    assert service.send()["sent"] == 0
+    market = {good.vendor_code: good for good in client.list_goods()}
+    assert market["SKU-OUT"].discounted_price_kopecks == 149000
+
+
+def test_approve_does_not_touch_auto(tmp_path, start_emulator):
+    service, _client, repo = build(tmp_path, start_emulator, default_goods())
+    repo.set_mode("SKU-OUT", "auto", at=AS_OF)
+    service.run(as_of=AS_OF)
+
+    assert service.approve() == 0
+    assert [row["status"] for row in service.queue()] == ["auto"]
+
+
 def test_approved_is_not_duplicated_before_send(tmp_path, start_emulator):
     service, _client, repo = build(tmp_path, start_emulator, default_goods())
     repo.set_mode("SKU-OUT", "recommend", at=AS_OF)

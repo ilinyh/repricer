@@ -115,6 +115,26 @@ def test_reject_hides_from_queue(tmp_path, start_emulator):
     assert repo.list_decisions(("rejected",))
 
 
+def test_auto_decision_is_shown_and_rejectable_in_queue(tmp_path, start_emulator):
+    client, _service, repo = build(tmp_path, start_emulator)
+    repo.set_mode("T-OVER", "auto", at=datetime(2024, 3, 31, 12, 0, 0))
+    client.post("/run", data={"as_of": AS_OF}, follow_redirects=False)
+
+    page = client.get("/queue")
+    assert "T-OVER" in page.text
+    assert "авто" in page.text
+
+    decision_id = repo.list_decisions(("auto",))[0]["id"]
+    client.post(
+        "/queue/decision",
+        data={"action": "reject", "ids": str(decision_id)},
+        follow_redirects=False,
+    )
+
+    assert [row["vendor_code"] for row in repo.list_decisions(("rejected",))] == ["T-OVER"]
+    assert "T-OVER" not in client.get("/queue").text
+
+
 def test_settings_page_updates_global_rules(tmp_path, start_emulator):
     client, service, _repo = build(tmp_path, start_emulator)
 

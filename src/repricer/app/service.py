@@ -273,26 +273,36 @@ class RepricerService:
 
     # --- очередь --------------------------------------------------------
     def approve(self, decision_ids: Iterable[int] | None = None) -> int:
-        return self._set_status(decision_ids, from_status=STATUS_PENDING, to_status=STATUS_APPROVED, event="approved")
+        return self._set_status(
+            decision_ids,
+            from_statuses=(STATUS_PENDING,),
+            to_status=STATUS_APPROVED,
+            event="approved",
+        )
 
     def reject(self, decision_ids: Iterable[int] | None = None) -> int:
-        return self._set_status(decision_ids, from_status=STATUS_PENDING, to_status=STATUS_REJECTED, event="rejected")
+        return self._set_status(
+            decision_ids,
+            from_statuses=(STATUS_PENDING, STATUS_AUTO),
+            to_status=STATUS_REJECTED,
+            event="rejected",
+        )
 
     def _set_status(
         self,
         decision_ids: Iterable[int] | None,
         *,
-        from_status: str,
+        from_statuses: tuple[str, ...],
         to_status: str,
         event: str,
     ) -> int:
         if decision_ids is None:
-            rows = self.repo.list_decisions((from_status,))
+            rows = self.repo.list_decisions(from_statuses)
         else:
             rows = [
                 row
                 for row in (self.repo.get_decision(int(i)) for i in decision_ids)
-                if row and row["status"] == from_status
+                if row and row["status"] in from_statuses
             ]
         now = self.clock()
         for row in rows:
@@ -482,7 +492,8 @@ class RepricerService:
         return rows
 
     def queue(self) -> list[dict]:
-        return self.repo.list_decisions((STATUS_PENDING,))
+        """Решения, которые ещё не отправлены: ждут подтверждения и авто."""
+        return self.repo.list_decisions((STATUS_PENDING, STATUS_AUTO))
 
     def journal(self, vendor_code: str | None = None) -> list[dict]:
         return self.repo.journal(vendor_code=vendor_code)
