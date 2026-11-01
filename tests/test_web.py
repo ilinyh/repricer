@@ -72,7 +72,7 @@ def test_full_cycle_through_forms(tmp_path, start_emulator):
 
     applied = repo.list_decisions(("applied",))
     assert applied and applied[0]["vendor_code"] == "T-OUT"
-    assert applied[0]["actual_price_kopecks"] == 353300  # 3430 × 1,03 → 3533 ₽
+    assert applied[0]["actual_price_kopecks"] == 245000  # 1490 → коридор: 3500 × 70 % = 2450 ₽
 
     product = client.get("/product/T-OUT")
     assert product.status_code == 200
