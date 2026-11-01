@@ -45,7 +45,7 @@ def test_index_shows_zones_and_states(tmp_path, start_emulator):
     assert "нет в наличии" in response.text
     assert "нет на площадке" in response.text
     assert response.text.index("Базовая цена") < response.text.index("Текущая цена")
-    assert "3\u00a0500,00 ₽" in response.text  # базовая цена T-OUT из CSV
+    assert "4\u00a0000,00 ₽" in response.text  # базовая цена T-DISC из CSV
 
 
 def test_full_cycle_through_forms(tmp_path, start_emulator):
@@ -72,7 +72,7 @@ def test_full_cycle_through_forms(tmp_path, start_emulator):
 
     applied = repo.list_decisions(("applied",))
     assert applied and applied[0]["vendor_code"] == "T-OUT"
-    assert applied[0]["actual_price_kopecks"] == 245000  # 1490 → коридор: 3500 × 70 % = 2450 ₽
+    assert applied[0]["actual_price_kopecks"] == 153500  # 1490 × 1,03 → 1535 ₽ (коридор 1050–9000)
 
     product = client.get("/product/T-OUT")
     assert product.status_code == 200
