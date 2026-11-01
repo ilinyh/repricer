@@ -2,6 +2,7 @@
 {% block content %}
 <h1>Товары</h1>
 {% if error %}<p class="message">{{ error }}</p>{% endif %}
+<div class="filters">
 <form method="get" action="/" class="inline">
     <label>Зона
         <select name="zone">
@@ -22,6 +23,17 @@
     <label>Дата расчёта <input type="date" name="as_of" value="{{ as_of }}"></label>
     <button type="submit">Показать</button>
 </form>
+<form method="post" action="/products/mode" class="inline mode-all-form" title="Изменить режим всех отображаемых строк">
+    {% for row in rows %}<input type="hidden" name="codes" value="{{ row.vendor_code }}">{% endfor %}
+    <select name="mode" title="Режим для всех отображаемых строк">
+        <option value="" selected disabled>режим…</option>
+        <option value="off">выкл</option>
+        <option value="recommend">рек</option>
+        <option value="auto">авто</option>
+    </select>
+    <button type="submit" title="Применить ко всем отображаемым строкам">→</button>
+</form>
+</div>
 
 <table>
     <thead>
@@ -38,18 +50,7 @@
         <th>Маржа сейчас</th>
         <th>Маржа после</th>
         <th>Причина</th>
-        <th class="mode-all">Режим
-            <form method="post" action="/products/mode" class="inline mode-all-form" title="Изменить режим всех строк таблицы">
-                {% for row in rows %}<input type="hidden" name="codes" value="{{ row.vendor_code }}">{% endfor %}
-                <select name="mode" title="Режим для всех строк таблицы">
-                    <option value="" selected disabled>режим…</option>
-                    <option value="off">выкл</option>
-                    <option value="recommend">рек</option>
-                    <option value="auto">авто</option>
-                </select>
-                <button type="submit" title="Применить ко всем строкам таблицы">→</button>
-            </form>
-        </th>
+        <th>Режим</th>
         <th></th>
     </tr>
     </thead>
