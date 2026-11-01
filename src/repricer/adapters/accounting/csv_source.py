@@ -52,7 +52,7 @@ class CsvAccountingSource:
 
     def fetch(self, *, as_of: date, window_days: int) -> list[AccountingProduct]:
         products = self._read_products()
-        sales = self._read_sales(as_of=as_of, window_days=window_days)
+        sales, returns = self._read_sales(as_of=as_of, window_days=window_days)
 
         result: list[AccountingProduct] = []
         for vendor_code, row in products.items():
@@ -64,6 +64,9 @@ class CsvAccountingSource:
                     cost_kopecks=row["cost_kopecks"],
                     base_price_kopecks=row["base_price_kopecks"],
                     sales_by_day=tuple(sorted(sales.get(vendor_code, {}).items())),
+                    incoming_qty=row["incoming_qty"],
+                    incoming_date=row["incoming_date"],
+                    returns_by_day=tuple(sorted(returns.get(vendor_code, {}).items())),
                 )
             )
         result.sort(key=lambda product: product.vendor_code)
@@ -81,6 +84,16 @@ class CsvAccountingSource:
                     raise CsvSourceError(f"{path}:{line_no}: пустой vendor_code")
                 if code in products:
                     raise CsvSourceError(f"{path}:{line_no}: дубликат артикула {code!r}")
+                raw_incoming_date = (row.get("incoming_date") or "").strip()
+                incoming_date = None
+                if raw_incoming_date:
+                    try:
+                        incoming_date = datetime.strptime(raw_incoming_date, "%Y-%m-%d").date()
+                    except ValueError as exc:
+                        raise CsvSourceError(
+                            f"{path}:{line_no}: дата поставки не распознана: {raw_incoming_date!r}"
+                        ) from exc
+                raw_incoming_qty = (row.get("incoming_qty") or "").strip()
                 products[code] = {
                     "name": (row.get("name") or "").strip(),
                     "stock_qty": _to_decimal(row.get("stock_qty", ""), where=f"{path}:{line_no}"),
@@ -88,15 +101,24 @@ class CsvAccountingSource:
                     "base_price_kopecks": _to_kopecks(
                         row.get("base_price", ""), where=f"{path}:{line_no}"
                     ),
+                    "incoming_qty": (
+                        _to_decimal(raw_incoming_qty, where=f"{path}:{line_no}")
+                        if raw_incoming_qty
+                        else Decimal(0)
+                    ),
+                    "incoming_date": incoming_date,
                 }
         return products
 
-    def _read_sales(self, *, as_of: date, window_days: int) -> dict[str, dict[date, Decimal]]:
+    def _read_sales(
+        self, *, as_of: date, window_days: int
+    ) -> tuple[dict[str, dict[date, Decimal]], dict[str, dict[date, Decimal]]]:
         path = Path(self.sales_path)
         if not path.exists():
             raise CsvSourceError(f"файл продаж не найден: {path}")
         start = as_of - timedelta(days=window_days - 1)
         sales: dict[str, dict[date, Decimal]] = {}
+        returns: dict[str, dict[date, Decimal]] = {}
         with path.open("r", encoding="utf-8-sig", newline="") as handle:
             for line_no, row in enumerate(csv.DictReader(handle), start=2):
                 code = (row.get("vendor_code") or "").strip()
@@ -112,4 +134,10 @@ class CsvAccountingSource:
                 qty = _to_decimal(row.get("qty", ""), where=f"{path}:{line_no}")
                 bucket = sales.setdefault(code, {})
                 bucket[day] = bucket.get(day, Decimal(0)) + qty
-        return sales
+                raw_returns = (row.get("returns") or "").strip()
+                if raw_returns:
+                    value = _to_decimal(raw_returns, where=f"{path}:{line_no}")
+                    if value:
+                        returns.setdefault(code, {})
+                        returns[code][day] = returns[code].get(day, Decimal(0)) + value
+        return sales, returns

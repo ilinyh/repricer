@@ -6,7 +6,11 @@
 
 from __future__ import annotations
 
+import math
 import os
+import threading
+import time
+from collections import deque
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Annotated
@@ -28,15 +32,61 @@ def _env_decimal(name: str, default: str) -> Decimal:
         return Decimal(default)
 
 
-def create_app(store: Store | None = None) -> FastAPI:
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.getenv(name, str(default)))
+    except ValueError:
+        return default
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except ValueError:
+        return default
+
+
+def create_app(
+    store: Store | None = None,
+    *,
+    rate_limit: int | None = None,
+    rate_window: float | None = None,
+) -> FastAPI:
     if store is None:
         seed_path = Path(os.getenv("WB_SEED_PATH", str(DEFAULT_SEED)))
         delay = float(os.getenv("WB_APPLY_DELAY_SECONDS", "3"))
         quarantine = _env_decimal("WB_QUARANTINE_PCT", "30")
         store = Store(load_goods(seed_path), apply_delay=delay, quarantine_pct=quarantine)
+    if rate_limit is None:
+        rate_limit = max(0, _env_int("WB_RATE_LIMIT", 0))
+    if rate_window is None:
+        rate_window = max(0.01, _env_float("WB_RATE_LIMIT_WINDOW_SECONDS", 1.0))
 
     app = FastAPI(title="WB Prices Emulator", version="0.1.0")
     app.state.store = store
+
+    buckets: dict[str, deque[float]] = {}
+    buckets_lock = threading.Lock()
+
+    @app.middleware("http")
+    async def rate_limit_middleware(request: Request, call_next):
+        if rate_limit <= 0 or request.url.path == "/health":
+            return await call_next(request)
+        token = request.headers.get("authorization", "")
+        now = time.monotonic()
+        with buckets_lock:
+            bucket = buckets.setdefault(token, deque())
+            while bucket and now - bucket[0] > rate_window:
+                bucket.popleft()
+            if len(bucket) >= rate_limit:
+                retry_after = max(1, math.ceil(rate_window - (now - bucket[0])))
+                return JSONResponse(
+                    status_code=429,
+                    content={"error": True, "errorText": "Слишком много запросов"},
+                    headers={"Retry-After": str(retry_after)},
+                )
+            bucket.append(now)
+        return await call_next(request)
 
     def require_token(authorization: Annotated[str | None, Header()] = None) -> None:
         if not authorization or not authorization.strip():

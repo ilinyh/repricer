@@ -38,6 +38,8 @@ class Reason(str, Enum):
     MIN_MARGIN = "min_margin"
     NO_CHANGE = "no_change"
     PAUSE = "pause"
+    INCOMING = "incoming"
+    RETURN_TO_BASE = "return_to_base"
 
 
 @dataclass(frozen=True)
@@ -52,6 +54,7 @@ class Rules:
     max_discount_pct: Decimal = Decimal("30")
     max_markup_pct: Decimal = Decimal("500")
     pause_hours: int = 24
+    return_to_base: bool = False
 
 
 @dataclass(frozen=True)
@@ -66,6 +69,8 @@ class ProductSnapshot:
     current_price_kopecks: int
     sales_by_day: tuple[tuple[date, Decimal], ...] = ()
     last_price_change_at: datetime | None = None
+    incoming_qty: Decimal = Decimal(0)
+    incoming_date: date | None = None
 
 
 @dataclass(frozen=True)

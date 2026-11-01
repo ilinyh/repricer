@@ -17,6 +17,21 @@ uvicorn emulator_wb.app.main:app --port 8090
 | `WB_SEED_PATH` | `emulator_wb/data/goods.json` | файл начальных товаров |
 | `WB_APPLY_DELAY_SECONDS` | `3` | через сколько секунд применяются цены |
 | `WB_QUARANTINE_PCT` | `30` | порог карантина, % падения цены |
+| `WB_RATE_LIMIT` | `0` | запросов за окно на токен; `0` — лимит выключен |
+| `WB_RATE_LIMIT_WINDOW_SECONDS` | `1` | размер окна лимита, секунды |
+
+## Ограничение запросов
+
+Если `WB_RATE_LIMIT > 0`, запросы сверх лимита получают `429`:
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 1
+{"error": true, "errorText": "Слишком много запросов"}
+```
+
+Лимит считается отдельно для каждого токена `Authorization`; `/health` не учитывается. Репрайсер
+повторяет запрос после паузы (по `Retry-After` или с экспоненциальной задержкой, до 3 попыток).
 
 ## Методы
 

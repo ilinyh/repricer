@@ -229,3 +229,17 @@ def test_unknown_upload_id(client: TestClient) -> None:
     response = client.get("/api/v2/history/tasks", params={"uploadID": 999}, headers=AUTH)
     assert response.status_code == 404
     assert response.json()["error"] is True
+
+
+def test_rate_limit_returns_429_then_recovers() -> None:
+    store = Store([Good(1001, "SKU-1", 1000, 0)])
+    client = TestClient(create_app(store, rate_limit=1, rate_window=0.3))
+
+    assert client.get("/api/v2/list/goods/filter", headers=AUTH).status_code == 200
+    limited = client.get("/api/v2/list/goods/filter", headers=AUTH)
+    assert limited.status_code == 429
+    assert limited.json()["error"] is True
+    assert "Retry-After" in limited.headers
+
+    time.sleep(0.4)
+    assert client.get("/api/v2/list/goods/filter", headers=AUTH).status_code == 200

@@ -40,6 +40,7 @@ RULE_FIELDS = (
     "max_discount_pct",
     "max_markup_pct",
     "pause_hours",
+    "return_to_base",
 )
 
 
@@ -262,6 +263,7 @@ def create_app(
                 rules=service.global_rules(),
                 schedule_minutes=service.schedule_minutes(),
                 auto_send=service.auto_send_enabled(),
+                sales_basis=service.sales_basis(),
             ),
         )
 
@@ -277,10 +279,12 @@ def create_app(
                 pass
         auto_send = form.get("auto_send") not in (None, "")
         service.set_auto_send(auto_send)
+        basis = str(form.get("sales_basis") or "orders")
+        service.set_sales_basis(basis)
         service.repo.append_journal(
             "settings_changed",
             at=service.clock(),
-            payload={"rules": data, "auto_send": auto_send},
+            payload={"rules": data, "auto_send": auto_send, "sales_basis": service.sales_basis()},
         )
         return _redirect("Настройки сохранены")
 

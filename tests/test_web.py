@@ -167,6 +167,27 @@ def test_settings_auto_send_checkbox(tmp_path, start_emulator):
     assert service.auto_send_enabled() is False
 
 
+def test_settings_sales_basis_switch(tmp_path, start_emulator):
+    client, service, _repo = build(tmp_path, start_emulator)
+
+    assert service.sales_basis() == "orders"
+    client.post("/settings", data={"sales_basis": "buyouts"}, follow_redirects=False)
+
+    assert service.sales_basis() == "buyouts"
+    assert "по выкупам" in client.get("/settings").text
+
+
+def test_settings_return_to_base_checkbox(tmp_path, start_emulator):
+    client, service, _repo = build(tmp_path, start_emulator)
+
+    assert service.global_rules().return_to_base is False
+    client.post("/settings", data={"return_to_base": "1"}, follow_redirects=False)
+    assert service.global_rules().return_to_base is True
+
+    client.post("/settings", data={"sales_window_days": "14"}, follow_redirects=False)
+    assert service.global_rules().return_to_base is False
+
+
 def test_filters_by_zone(tmp_path, start_emulator):
     client, _service, _repo = build(tmp_path, start_emulator)
 

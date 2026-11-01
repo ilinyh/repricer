@@ -63,3 +63,44 @@ def test_missing_file_fails(tmp_path):
     source = CsvAccountingSource(tmp_path / "nope.csv", tmp_path / "nope2.csv")
     with pytest.raises(CsvSourceError):
         source.fetch(as_of=date(2024, 3, 31), window_days=14)
+
+
+def test_reads_incoming_and_returns(tmp_path):
+    source = write(
+        tmp_path,
+        "vendor_code,name,stock_qty,cost,base_price,incoming_qty,incoming_date\n"
+        "SKU-1,Товар,20,500,1500,100,2024-04-01\n",
+        "vendor_code,date,qty,returns\n"
+        "SKU-1,2024-03-31,10,2\n"
+        "SKU-1,2024-03-31,5,1\n",
+    )
+    product = source.fetch(as_of=date(2024, 3, 31), window_days=14)[0]
+
+    assert product.incoming_qty == Decimal("100")
+    assert product.incoming_date == date(2024, 4, 1)
+    assert product.sales_by_day == ((date(2024, 3, 31), Decimal("15")),)
+    assert product.returns_by_day == ((date(2024, 3, 31), Decimal("3")),)
+
+
+def test_optional_columns_are_absent(tmp_path):
+    source = write(
+        tmp_path,
+        "vendor_code,name,stock_qty,cost,base_price\nSKU-1,Товар,10,500,1500\n",
+        "vendor_code,date,qty\nSKU-1,2024-03-31,2\n",
+    )
+    product = source.fetch(as_of=date(2024, 3, 31), window_days=14)[0]
+
+    assert product.incoming_qty == Decimal(0)
+    assert product.incoming_date is None
+    assert product.returns_by_day == ()
+
+
+def test_invalid_incoming_date_fails(tmp_path):
+    source = write(
+        tmp_path,
+        "vendor_code,name,stock_qty,cost,base_price,incoming_qty,incoming_date\n"
+        "SKU-1,Товар,20,500,1500,100,01.04.2024\n",
+        "vendor_code,date,qty\n",
+    )
+    with pytest.raises(CsvSourceError):
+        source.fetch(as_of=date(2024, 3, 31), window_days=14)

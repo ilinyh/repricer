@@ -22,6 +22,9 @@ class AccountingProduct:
     cost_kopecks: int
     base_price_kopecks: int
     sales_by_day: tuple[tuple[date, Decimal], ...]
+    incoming_qty: Decimal = Decimal(0)
+    incoming_date: date | None = None
+    returns_by_day: tuple[tuple[date, Decimal], ...] = ()
 
 
 @runtime_checkable

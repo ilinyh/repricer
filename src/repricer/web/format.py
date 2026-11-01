@@ -37,6 +37,8 @@ REASON_LABELS = {
     "min_margin": "минимальная маржа",
     "no_change": "без изменений",
     "pause": "пауза",
+    "incoming": "поставка в пути",
+    "return_to_base": "возврат к базовой",
 }
 
 LIMITER_LABELS = {
@@ -46,6 +48,7 @@ LIMITER_LABELS = {
     "pause": "пауза",
     "no_stock": "нет остатка",
     "no_sales": "нет продаж",
+    "incoming": "аутсток не учитывается",
 }
 
 EVENT_LABELS = {

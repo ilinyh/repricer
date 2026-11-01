@@ -12,6 +12,13 @@
     <label>Пауза после изменения, ч <input name="pause_hours" value="{{ rules.pause_hours }}"></label>
     <label>Автопересчёт, мин (0 — выключен) <input name="schedule_minutes" value="{{ schedule_minutes }}"></label>
     <label class="check">Автоотправка <input type="checkbox" name="auto_send" value="1" {% if auto_send %}checked{% endif %}></label>
+    <label>Считать продажи
+        <select name="sales_basis">
+            <option value="orders" {% if sales_basis == 'orders' %}selected{% endif %}>по заказам</option>
+            <option value="buyouts" {% if sales_basis == 'buyouts' %}selected{% endif %}>по выкупам</option>
+        </select>
+    </label>
+    <label class="check">Возврат к базовой цене <input type="checkbox" name="return_to_base" value="1" {% if rules.return_to_base %}checked{% endif %}></label>
     <button type="submit">Сохранить</button>
 </form>
 <p class="hint">Значения по умолчанию совпадают с ТЗ. Переопределяются на карточке товара.</p>

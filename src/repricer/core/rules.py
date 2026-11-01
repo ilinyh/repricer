@@ -108,19 +108,126 @@ def decide(
             limiters=("no_stock",),
         )
 
-    if zone is Zone.NORMAL:
+    # Поставка в пути: если придёт раньше, чем кончится остаток, аутсток не учитываем.
+    if (
+        zone is Zone.OUTAGE
+        and product.incoming_qty > 0
+        and product.incoming_date is not None
+        and product.incoming_date >= as_of_date
+        and (product.incoming_date - as_of_date).days < days_of_stock
+    ):
         return Decision(
             vendor_code=product.vendor_code,
-            zone=zone,
+            zone=Zone.NORMAL,
             sales_per_day=sales_per_day,
             days_of_stock=quantize_days(days_of_stock),
             current_price_kopecks=current,
             recommended_price_kopecks=current,
             margin_before_pct=quantize_pct(margin_before),
             margin_after_pct=quantize_pct(margin_before),
-            reason=Reason.NORMAL,
-            message="Запас в норме — цену не трогаем",
+            reason=Reason.INCOMING,
+            message=(
+                f"Поставка {product.incoming_qty} шт. "
+                f"{product.incoming_date.strftime('%d.%m.%Y')} придёт раньше, чем кончится "
+                f"остаток ({quantize_days(days_of_stock)} дн.) — аутсток не учитываем"
+            ),
+            limiters=("incoming",),
             margin_warning=warning,
+        )
+
+    if zone is Zone.NORMAL:
+        base = product.base_price_kopecks
+        # Возврат к базовой — отдельное правило (по умолчанию выключено).
+        can_return = rules.return_to_base and current != base
+        if not can_return:
+            return Decision(
+                vendor_code=product.vendor_code,
+                zone=zone,
+                sales_per_day=sales_per_day,
+                days_of_stock=quantize_days(days_of_stock),
+                current_price_kopecks=current,
+                recommended_price_kopecks=current,
+                margin_before_pct=quantize_pct(margin_before),
+                margin_after_pct=quantize_pct(margin_before),
+                reason=Reason.NORMAL,
+                message="Запас в норме — цену не трогаем",
+                margin_warning=warning,
+            )
+
+        raising = base > current
+        step = rules.step_pct / Decimal(100)
+        factor = Decimal(1) + step if raising else Decimal(1) - step
+        raw = Decimal(current) * factor
+        raw = min(raw, Decimal(base)) if raising else max(raw, Decimal(base))
+
+        return_limiters: list[str] = []
+        lower, upper = _corridor(rules, base)
+        new_price = _round_inside_corridor(
+            raw, raising=raising, lower=lower, upper=upper, limiters=return_limiters
+        )
+        new_price = min(new_price, base) if raising else max(new_price, base)
+
+        def normal_unchanged(
+            reason: Reason, message: str, extra: tuple[str, ...] = ()
+        ) -> Decision:
+            return Decision(
+                vendor_code=product.vendor_code,
+                zone=zone,
+                sales_per_day=sales_per_day,
+                days_of_stock=quantize_days(days_of_stock),
+                current_price_kopecks=current,
+                recommended_price_kopecks=current,
+                margin_before_pct=quantize_pct(margin_before),
+                margin_after_pct=quantize_pct(margin_before),
+                reason=reason,
+                message=message,
+                limiters=tuple(return_limiters) + extra,
+                margin_warning=warning,
+            )
+
+        if new_price == current:
+            return normal_unchanged(
+                Reason.NORMAL, "Запас в норме — цена уже на шаге к базовой"
+            )
+
+        if new_price < current:
+            margin_new = margin_pct(new_price, product.cost_kopecks)
+            if margin_new is not None and margin_new < rules.min_margin_pct:
+                return normal_unchanged(
+                    Reason.MIN_MARGIN,
+                    f"Возврат к базовой не разрешён: маржа {fmt_pct(margin_new)}% "
+                    f"ниже минимальной {fmt_pct(rules.min_margin_pct)}%",
+                    ("min_margin",),
+                )
+
+        if product.last_price_change_at is not None:
+            elapsed = as_of - product.last_price_change_at
+            if elapsed < timedelta(hours=rules.pause_hours):
+                hours = elapsed.total_seconds() / 3600
+                return normal_unchanged(
+                    Reason.PAUSE,
+                    f"Пауза после изменения цены: прошло {hours:.1f} ч из {rules.pause_hours} ч",
+                    ("pause",),
+                )
+
+        margin_after = margin_pct(new_price, product.cost_kopecks)
+        return Decision(
+            vendor_code=product.vendor_code,
+            zone=zone,
+            sales_per_day=sales_per_day,
+            days_of_stock=quantize_days(days_of_stock),
+            current_price_kopecks=current,
+            recommended_price_kopecks=new_price,
+            margin_before_pct=quantize_pct(margin_before),
+            margin_after_pct=quantize_pct(margin_after),
+            reason=Reason.RETURN_TO_BASE,
+            message=(
+                f"Возврат к базовой цене: {fmt_rubles(current)} → "
+                f"{fmt_rubles(new_price)} ₽ (базовая {fmt_rubles(base)} ₽)"
+            ),
+            limiters=tuple(return_limiters),
+            margin_warning=warning,
+            price_changed=True,
         )
 
     raising = zone is Zone.OUTAGE

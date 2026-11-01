@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import time
 
+import httpx
+import pytest
+
 from emulator_wb.app.store import Good
-from repricer.adapters.marketplace import UploadPrice, WBClient
+from repricer.adapters.marketplace import UploadPrice, WBClient, WBClientError
 
 
 def wait(client: WBClient, upload_id: int, *, attempts: int = 300):
@@ -54,3 +57,54 @@ def test_error_codes_are_exposed(start_emulator):
     by_nm = {item.nm_id: item for item in status.items}
     assert by_nm[9999].error_code == "unknown_nm"
     assert by_nm[1001].error_code == "quarantine"
+
+
+def test_client_retries_on_429():
+    calls = {"count": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return httpx.Response(
+                429,
+                json={"error": True, "errorText": "limit"},
+                headers={"Retry-After": "0"},
+            )
+        return httpx.Response(
+            200,
+            json={
+                "data": {
+                    "listGoods": [
+                        {
+                            "nmID": 1001,
+                            "vendorCode": "SKU-1",
+                            "discount": 0,
+                            "sizes": [{"price": 100000, "discountedPrice": 100000}],
+                        }
+                    ]
+                }
+            },
+        )
+
+    client = WBClient(
+        "http://test", "token", transport=httpx.MockTransport(handler), retries=2, backoff=0
+    )
+    with client:
+        goods = client.list_goods()
+
+    assert calls["count"] == 2
+    assert goods[0].vendor_code == "SKU-1"
+
+
+def test_client_raises_after_retries_exhausted():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            429, json={"error": True, "errorText": "limit"}, headers={"Retry-After": "0"}
+        )
+
+    client = WBClient(
+        "http://test", "token", transport=httpx.MockTransport(handler), retries=1, backoff=0
+    )
+    with client:
+        with pytest.raises(WBClientError):
+            client.list_goods()

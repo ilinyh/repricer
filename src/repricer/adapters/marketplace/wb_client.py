@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 
 import httpx
@@ -63,6 +64,8 @@ class WBClient:
         *,
         transport: httpx.BaseTransport | None = None,
         timeout: float = 30.0,
+        retries: int = 3,
+        backoff: float = 0.5,
     ) -> None:
         self._client = httpx.Client(
             base_url=base_url.rstrip("/"),
@@ -70,6 +73,25 @@ class WBClient:
             transport=transport,
             timeout=timeout,
         )
+        self.retries = max(0, retries)
+        self.backoff = max(0.0, backoff)
+
+    def _request(self, method: str, path: str, **kwargs) -> httpx.Response:
+        """Запрос с повтором на 429 (Retry-After) и экспоненциальной паузой."""
+
+        attempt = 0
+        while True:
+            response = self._client.request(method, path, **kwargs)
+            if response.status_code != 429 or attempt >= self.retries:
+                return response
+            attempt += 1
+            header = response.headers.get("Retry-After")
+            fallback = self.backoff * (2 ** (attempt - 1))
+            try:
+                delay = float(header) if header is not None else fallback
+            except ValueError:
+                delay = fallback
+            time.sleep(max(0.0, min(delay, 10.0)))
 
     def close(self) -> None:
         self._client.close()
@@ -85,8 +107,8 @@ class WBClient:
         offset = 0
         limit = 1000
         while True:
-            response = self._client.get(
-                "/api/v2/list/goods/filter", params={"limit": limit, "offset": offset}
+            response = self._request(
+                "GET", "/api/v2/list/goods/filter", params={"limit": limit, "offset": offset}
             )
             self._ensure_ok(response, "список товаров")
             payload = response.json()["data"]["listGoods"]
@@ -105,14 +127,14 @@ class WBClient:
                 for item in items
             ]
         }
-        response = self._client.post("/api/v2/upload/task", json=body)
+        response = self._request("POST", "/api/v2/upload/task", json=body)
         self._ensure_ok(response, "загрузка цен")
         data = response.json()["data"]
         return int(data["id"]), bool(data.get("alreadyExists", False))
 
     def task_status(self, upload_id: int) -> TaskStatus:
-        response = self._client.get(
-            "/api/v2/history/tasks", params={"uploadID": upload_id}
+        response = self._request(
+            "GET", "/api/v2/history/tasks", params={"uploadID": upload_id}
         )
         self._ensure_ok(response, "статус задачи")
         data = response.json()["data"]

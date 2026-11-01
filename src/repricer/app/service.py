@@ -21,6 +21,7 @@ from .pricing import choose_price_before
 RULES_SETTING = "rules"
 SCHEDULE_SETTING = "schedule_minutes"
 AUTO_SEND_SETTING = "auto_send"
+SALES_BASIS_SETTING = "sales_basis"
 
 STATUS_PENDING = "pending"
 STATUS_APPROVED = "approved"
@@ -35,6 +36,7 @@ STATUS_QUARANTINE = "quarantine"
 ACTIVE_STATUSES = (STATUS_PENDING, STATUS_APPROVED, STATUS_AUTO, STATUS_SENT)
 
 INT_FIELDS = {"sales_window_days", "pause_hours"}
+BOOL_FIELDS = {"return_to_base"}
 
 
 def coerce_rules(data: dict | None) -> Rules:
@@ -48,7 +50,12 @@ def coerce_rules(data: dict | None) -> Rules:
         raw = data[field.name]
         if raw is None or raw == "":
             continue
-        kwargs[field.name] = int(raw) if field.name in INT_FIELDS else Decimal(str(raw))
+        if field.name in BOOL_FIELDS:
+            kwargs[field.name] = str(raw).strip().lower() in ("1", "true", "yes", "on")
+        elif field.name in INT_FIELDS:
+            kwargs[field.name] = int(raw)
+        else:
+            kwargs[field.name] = Decimal(str(raw))
     return replace(base, **kwargs)
 
 
@@ -105,6 +112,15 @@ class RepricerService:
     def set_auto_send(self, enabled: bool) -> None:
         self.repo.set_setting(AUTO_SEND_SETTING, "1" if enabled else "0")
 
+    def sales_basis(self) -> str:
+        value = self.repo.get_setting(SALES_BASIS_SETTING, "orders") or "orders"
+        return value if value in ("orders", "buyouts") else "orders"
+
+    def set_sales_basis(self, value: str) -> None:
+        self.repo.set_setting(
+            SALES_BASIS_SETTING, value if value in ("orders", "buyouts") else "orders"
+        )
+
     def effective_rules(self, vendor_code: str) -> Rules:
         product = self.repo.get_product(vendor_code)
         merged = rules_to_dict(self.global_rules())
@@ -132,6 +148,7 @@ class RepricerService:
             )
         }
         products = self.repo.list_products()
+        basis = self.sales_basis()
         snapshots: list[Snapshot] = []
         for code, product in accounting.items():
             stored = products.get(code, {})
@@ -145,6 +162,13 @@ class RepricerService:
                     code, product.name, getattr(good, "nm_id", None), at=self.clock()
                 )
             rules = self.effective_rules(code)
+            returns = dict(product.returns_by_day)
+            sales = product.sales_by_day
+            if basis == "buyouts" and returns:
+                sales = tuple(
+                    (day, max(Decimal(0), qty - returns.get(day, Decimal(0))))
+                    for day, qty in sales
+                )
             decision = decide(
                 ProductSnapshot(
                     vendor_code=code,
@@ -153,8 +177,10 @@ class RepricerService:
                     cost_kopecks=product.cost_kopecks,
                     base_price_kopecks=product.base_price_kopecks,
                     current_price_kopecks=good.discounted_price_kopecks,
-                    sales_by_day=product.sales_by_day,
+                    sales_by_day=sales,
                     last_price_change_at=self.repo.last_applied_at(code, before=as_of),
+                    incoming_qty=product.incoming_qty,
+                    incoming_date=product.incoming_date,
                 ),
                 rules,
                 as_of=as_of,
