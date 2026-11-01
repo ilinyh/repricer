@@ -46,6 +46,8 @@ def test_index_shows_zones_and_states(tmp_path, start_emulator):
     assert "нет на площадке" in response.text
     assert response.text.index("Базовая цена") < response.text.index("Текущая цена")
     assert "4\u00a0000,00 ₽" in response.text  # базовая цена T-DISC из CSV
+    assert "маржа ниже минимальной" in response.text  # тег для T-WARN/T-WARNOUT
+    assert "⚠" in response.text
 
 
 def test_full_cycle_through_forms(tmp_path, start_emulator):

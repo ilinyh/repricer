@@ -58,6 +58,7 @@
         <td>{% if row.price_changed %}{{ pct(row.margin_after) }}{% else %}—{% endif %}</td>
         <td title="{{ row.message }}">{{ reason_label(row.reason) }}
             {% for limiter in row.limiters %}<span class="tag">{{ limiter_label(limiter) }}</span>{% endfor %}
+            {% if row.margin_warning %}<span class="tag">маржа ниже минимальной</span>{% endif %}
         </td>
         <td>
             <form method="post" action="/product/{{ row.vendor_code }}/mode" class="inline">
